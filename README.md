@@ -178,6 +178,7 @@ summary_df <- tibble(
                 sd(syn_df$precip, na.rm = TRUE)))
 knitr::kable(summary_df, digits = 2, caption = "Comparison of Overall Statistics")
    ```
+   ```
 
 6. **Generate plots**
 
