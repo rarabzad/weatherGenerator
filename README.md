@@ -1,4 +1,3 @@
-````markdown
 # Weather Generator
 
 This repository provides an R function to generate synthetic daily weather time series (precipitation and temperature) based on historical records, along with an example workflow that:
@@ -20,7 +19,6 @@ devtools::install_github("rarabzad/weatherGenerator")
 
 # Or source the function directly
 source("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/generate_weather.R")
-````
 
 Required packages:
 
