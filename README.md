@@ -125,9 +125,8 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    syn_df <- data.frame(
      date  = index(synthetic_xts),
      PRECIP = coredata(synthetic_xts[, "PRECIP"]),
-     TEMP   = coredata(synthetic_xts[, "TEMP_DAILY_AVE"])
+     TEMP   = coredata(synthetic_xts[, "TEMP"])
    ) %>%
-     rename(precip = PRECIP, temp = TEMP) %>%
      mutate(year = year(date), doy = yday(date))
    ```
 
