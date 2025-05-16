@@ -100,8 +100,8 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
 
    precip_xts <- xts(data$precipitation..mm., order.by = as.Date(data$date))
    temp_xts   <- xts(data$temp..C.,           order.by = as.Date(data$date))
-   colnames(precip_xts) <- "precip"
-   colnames(temp_xts)   <- "temp"
+   colnames(precip_xts) <- "PRECIP"
+   colnames(temp_xts)   <- "TEMP"
    ```
 
 2. **Generate synthetic series**
