@@ -146,9 +146,7 @@ summary_df <- tibble(
 )
 
 knitr::kable(summary_df, digits = 2, caption = "Comparison of Overall Statistics")
-   ```
-
----
+```
 
 ## Interpretation
 
