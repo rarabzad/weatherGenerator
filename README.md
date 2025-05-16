@@ -100,8 +100,8 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
 
    precip_xts <- xts(data$precipitation..mm., order.by = as.Date(data$date))
    temp_xts   <- xts(data$temp..C.,           order.by = as.Date(data$date))
-   colnames(precip_xts) <- "PRECIP"
-   colnames(temp_xts)   <- "TEMP"
+   colnames(precip_xts) <- "precip"
+   colnames(temp_xts)   <- "temp"
    ```
 
 2. **Generate synthetic series**
@@ -117,38 +117,69 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    ```r
    obs_df <- data.frame(
      date   = index(precip_xts),
-     PRECIP = coredata(precip_xts),
-     TEMP   = coredata(temp_xts)
+     precip = coredata(precip_xts),
+     temp   = coredata(temp_xts)
    ) %>%
      mutate(year = year(date), doy = yday(date))
 
    syn_df <- data.frame(
      date  = index(synthetic_xts),
      PRECIP = coredata(synthetic_xts[, "PRECIP"]),
-     TEMP   = coredata(synthetic_xts[, "TEMP"])
+     TEMP   = coredata(synthetic_xts[, "TEMP_DAILY_AVE"])
    ) %>%
+     rename(precip = PRECIP, temp = TEMP) %>%
      mutate(year = year(date), doy = yday(date))
    ```
 
-4. **Compute summaries**
+4. **Define summary routines**
+   Functions for daily climatology, monthly stats, and heatwave counts.
 
    ```r
-summary_df <- tibble(
-  Metric = c("Mean Temp (°C)", "SD Temp", "Mean Precip (mm)", "SD Precip"),
-  Observed = c(mean(obs_df$TEMP, na.rm = TRUE),
-               sd(obs_df$TEMP, na.rm = TRUE),
-               mean(obs_df$PRECIP, na.rm = TRUE),
-               sd(obs_df$PRECIP, na.rm = TRUE)),
-  Synthetic = c(mean(syn_df$TEMP, na.rm = TRUE),
-                sd(syn_df$TEMP, na.rm = TRUE),
-                mean(syn_df$PRECIP, na.rm = TRUE),
-                sd(syn_df$PRECIP, na.rm = TRUE))
-)
+   daily_means <- function(df) {
+     df %>%
+       group_by(doy) %>%
+       summarise(
+         mean_temp   = mean(temp,   na.rm = TRUE),
+         mean_precip = mean(precip, na.rm = TRUE)
+       )
+   }
 
-knitr::kable(summary_df, digits = 2, caption = "Comparison of Overall Statistics")
-```
+   monthly_stats <- function(df) {
+     df %>%
+       mutate(month = month(date, label = TRUE)) %>%
+       group_by(month) %>%
+       summarise(
+         mean_temp   = mean(temp,   na.rm = TRUE),
+         sd_temp     = sd(temp,     na.rm = TRUE),
+         mean_precip = mean(precip, na.rm = TRUE),
+         sd_precip   = sd(precip,   na.rm = TRUE)
+       )
+   }
 
-## Interpretation
+   count_heatwaves <- function(df, threshold = 30, duration = 3) {
+     df %>%
+       mutate(hot = temp > threshold) %>%
+       group_by(year) %>%
+       summarise(
+         heatwaves = sum(rle(hot)$lengths[rle(hot)$values] >= duration)
+       )
+   }
+   ```
+
+5. **Compute summaries**
+
+   ```r
+   obs_daily   <- daily_means(obs_df)
+   syn_daily   <- daily_means(syn_df)
+   obs_monthly <- monthly_stats(obs_df)
+   syn_monthly <- monthly_stats(syn_df)
+   obs_hw      <- count_heatwaves(obs_df, threshold = 19, duration = 3)
+   syn_hw      <- count_heatwaves(syn_df, threshold = 19, duration = 3)
+   ```
+
+---
+
+## 4. Interpretation
 
 Use these comparisons to evaluate how closely the synthetic series matches observed climatology, variability, and extreme‐event statistics. Adjust function arguments (e.g. `use_bootstrap = FALSE`, `ar_phi = 0.8`, `nyears = 50`) to test sensitivity.
 
