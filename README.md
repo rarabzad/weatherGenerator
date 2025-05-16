@@ -278,8 +278,8 @@ ggplot(hw_combined, aes(x = Source, y = heatwaves, fill = Source)) +
 ```r
 # Combine observed and synthetic temperatures
 temp_density_df <- bind_rows(
-  obs_df %>% select(temp) %>% rename(TEMP = temp) %>% mutate(Source = "Observed"),
-  syn_df %>% select(temp) %>% rename(TEMP = temp) %>% mutate(Source = "Synthetic")
+  obs_df %>% select(TEMP) %>% mutate(Source = "Observed"),
+  syn_df %>% select(TEMP) %>% mutate(Source = "Synthetic")
 )
 
 ggplot(temp_density_df, aes(x = TEMP, fill = Source)) +
@@ -296,8 +296,8 @@ ggplot(temp_density_df, aes(x = TEMP, fill = Source)) +
 
 ```r
 precip_density_df <- bind_rows(
-  obs_df %>% select(precip) %>% rename(PRECIP = precip) %>% mutate(Source = "Observed"),
-  syn_df %>% select(precip) %>% rename(PRECIP = precip) %>% mutate(Source = "Synthetic")
+  obs_df %>% select(PRECIP) %>% mutate(Source = "Observed"),
+  syn_df %>% select(PRECIP) %>% mutate(Source = "Synthetic")
 )
 
 ggplot(precip_density_df, aes(x = PRECIP, fill = Source)) +
@@ -317,16 +317,6 @@ ggplot(precip_density_df, aes(x = log(PRECIP + 1e-5), fill = Source)) +
 ```
 
 ---
-
-
-
-
-
-
-
-
-
-   
 
 ---
 
