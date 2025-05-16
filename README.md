@@ -1,165 +1,203 @@
-```markdown
-# Generate Synthetic Weather Ensembles
+````markdown
+# Weather Generator
 
-This repository contains a function that generates synthetic temperature and precipitation ensembles from historical daily data. The function uses **Generalized Additive Models (GAMs)** for seasonality and **ARIMA models** for residual dynamics. The generated ensembles can be used for various climate modeling and analysis tasks.
+This repository provides an R function to generate synthetic daily weather time series (precipitation and temperature) based on historical records, along with an example workflow that:
 
-## Description
+1. Loads the generator function and sample forcing data  
+2. Converts data into `xts` objects and runs the simulation  
+3. Computes daily & monthly climatologies and heatwave statistics  
+4. Produces comparison plots and summary tables
 
-The function `generate_weather` generates synthetic temperature and precipitation ensembles by modeling seasonality in the data using three available methods:
-- **DOY (Day of Year)**: Uses cyclic splines based on the day of year (DOY) for modeling seasonality.
-- **Month-Day**: Models temperature and precipitation using factors for month and day of month.
-- **Hybrid**: Combines the DOY and month effects for temperature, while precipitation is modeled directly from input.
+---
 
-Residuals from seasonal models are modeled using ARIMA for temperature and GAMs for precipitation.
+## 1. Installation
 
-## Function Usage
-
-```r
-generate_weather(temp_xts, precip_xts, n_ensembles = 5, temp_method = "doy", precip_method = "doy")
-```
-
-### Arguments
-- **temp_xts**: An `xts` object containing daily historical temperature values.
-- **precip_xts**: An `xts` object containing daily historical precipitation values.
-- **n_ensembles**: Integer, the number of ensemble members to generate. Default is 5.
-- **temp_method**: Method used for temperature simulation. One of `"doy"`, `"month_day"`, or `"hybrid"`.
-- **precip_method**: Method used for precipitation simulation. One of `"doy"`, `"month_day"`, or `"hybrid"`.
-
-### Returns
-
-A list with two components:
-- **temperature**: An `xts` object containing the synthetic temperature ensembles. Columns are named `temp_1`, `temp_2`, etc.
-- **precipitation**: An `xts` object containing the synthetic precipitation ensembles. Columns are named `precip_1`, `precip_2`, etc.
-
-### Details
-
-Each method defines a different approach for modeling seasonality in the data. The residuals from the seasonal models are treated separately with stochastic processes (ARIMA for temperature and a two-stage model for precipitation).
-
-#### DOY Method
-
-For temperature:
-\[
-T(d) = f_1(\text{DOY}_d) + \varepsilon_d
-\]
-Where \(f_1\) is a smooth cyclic spline fit using `s(doy, bs = "cc")` in a GAM, and the residuals \(\varepsilon_d\) are modeled using `auto.arima`.
-
-For precipitation:
-- **Occurrence model (wet/dry)**: 
-  \[
-  \text{logit}(p_d) = f_2(\text{DOY}_d)
-  \]
-- **Amount model (Gamma)**: 
-  \[
-  \log(\mu_d) = f_3(\text{DOY}_d) \quad \text{for days with precipitation}
-  \]
-Both \(f_2\) and \(f_3\) are GAMs using cyclic splines on the day of year.
-
-#### Month-Day Method
-
-For temperature:
-\[
-T(d) = \alpha_{m_d, dom_d} + \varepsilon_d
-\]
-Where \(\alpha_{m, dom}\) is a categorical effect of month and day-of-month, and the residuals \(\varepsilon_d\) are modeled using `auto.arima`.
-
-For precipitation:
-- **Occurrence model**: 
-  \[
-  \text{logit}(p_d) = \beta_{m_d, dom_d}
-  \]
-- **Amount model**: 
-  \[
-  \log(\mu_d) = \gamma_{m_d, dom_d} \quad \text{(only for wet days)}
-  \]
-These are GAMs with factor smooths on month and day.
-
-#### Hybrid Method
-
-For temperature:
-\[
-T(d) = f_4(\text{DOY}_d) + f_5(\text{Month}_d) + \varepsilon_d
-\]
-Where \(f_4\) and \(f_5\) are smooth terms using cyclic splines on DOY and Month, respectively. Precipitation is not modeled stochastically in this method and is reused from the input.
-
-### Synthetic Weather Simulation
-
-For all methods, synthetic daily temperature and precipitation are simulated as follows:
-
-- Temperature:
-\[
-T^{(e)}_d = \hat{f}(d) + \varepsilon^{(e)}_d
-\]
-
-- Precipitation:
-\[
-P^{(e)}_d = 
-\begin{cases}
-\text{Gamma}(\mu_d) & \text{if wet day} \\
-0 & \text{otherwise}
-\end{cases}
-\]
-Where \(\mu_d\) is the predicted mean precipitation from the GAM, and "wet day" is drawn from a Bernoulli with probability \(p_d\).
-
-Progress bars are shown for ensemble generation steps using `txtProgressBar()`.
-
-## Example
-
-### Load necessary libraries
+You can install directly from GitHub using **devtools**, or simply source the function file:
 
 ```r
-library(xts)         # For time series manipulation
-library(mgcv)        # For fitting Generalized Additive Models (GAMs)
-library(forecast)    # For ARIMA modeling
-library(daymetr)     # For retrieving weather data from Daymet
-library(dygraphs)    # Optional: For interactive time series visualization
-```
+# Install from GitHub via devtools
+devtools::install_github("rarabzad/weatherGenerator")
 
-### Retrieve Data from Daymet
+# Or source the function directly
+source("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/generate_weather.R")
+````
 
-```r
-start_date <- "2000-01-01"
-end_date <- "2020-12-31"
-lat <- 37.7749  # Latitude (e.g., San Francisco)
-lon <- -122.4194  # Longitude
-
-# Retrieve temperature and precipitation data
-weather_data <- daymetr::daymet(
-  start = start_date, 
-  end = end_date, 
-  lat = lat, 
-  lon = lon,
-  vars = c("tmin", "tmax", "prcp")
-)
-
-# Convert to xts objects
-temp_xts <- xts(weather_data$tmin + weather_data$tmax, order.by = weather_data$date)  # Average temperature
-precip_xts <- xts(weather_data$prcp, order.by = weather_data$date)  # Precipitation
-```
-
-### Generate Synthetic Weather Ensembles
+Required packages:
 
 ```r
-n_ensembles <- 100
-temp_method <- "month_day"
-precip_method <- "month_day"
-
-# Call the weather generation function
-result <- generate_weather(temp_xts, precip_xts, n_ensembles, temp_method, precip_method)
-
-# Visualize the generated data (optional)
-dygraph(result$temperature)
-dygraph(result$precipitation)
+install.packages(c("xts", "zoo", "lubridate", "dplyr", "ggplot2", "knitr"))
 ```
 
-## Dependencies
+---
 
-- `xts`: For handling time series data
-- `mgcv`: For fitting Generalized Additive Models (GAMs)
-- `forecast`: For ARIMA modeling
-- `daymetr`: For retrieving weather data from Daymet
-- `dygraphs`: For interactive time series visualization
+## 2. Function Documentation
 
-## License
+**Generate Synthetic Daily Weather**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Description**
+Simulate a multi‑year daily time series of precipitation and temperature by fitting a monthly two‑state (wet/dry) Markov chain to historical data, sampling wet‑day precipitation either by bootstrap or a log‑normal parametric model (with optional AR(1) on log‑intensity), and drawing daily temperature from a monthly normal distribution.
+
+**Arguments**
+
+* `precip_xts`: An `xts` series of daily precipitation (mm), indexed by Date.
+* `temp_xts`: An `xts` series of daily temperature (°C), indexed by Date.
+* `nyears` (default = 100): Number of years to simulate.
+* `prcp_range` (default = c(0, Inf)): Numeric vector of length 2; clamps simulated precipitation to \[min, max].
+* `temp_range` (default = c(-60, 60)): Numeric vector of length 2; clamps simulated temperature to \[min, max].
+* `use_bootstrap` (default = TRUE): If TRUE, sample precipitation intensities by drawing randomly from historical wet‑day values; if FALSE, draw from a log‑normal distribution fitted with a rolling window.
+* `roll_window` (default = 31): Window size (days) for computing rolling‑window mean and SD of log‑intensity when `use_bootstrap = FALSE`.
+* `prior_counts` (default = 1): Pseudo‑count (additive smoothing) for estimating monthly Markov probabilities P01 and P11.
+* `enforce_truncate` (default = TRUE): If TRUE, cap log‑normal draws at the 99th percentile of historical wet‑day log‑intensities.
+* `ar_phi` (default = NULL): Optional numeric; if provided, applies AR(1) on the log(precip+ε) series across consecutive wet days with coefficient φ.
+
+**Mechanics**
+
+1. **Data merge & month tagging**: Merge precipitation and temperature `xts` objects and extract each day’s month.
+2. **Empirical wet‑day pool**: For each calendar month, collect all historical positive precipitation values for bootstrap sampling.
+3. **Markov chain parameters**: Compute monthly probabilities P01 (dry→wet) and P11 (wet→wet) with add‑1 smoothing:
+
+   $$
+     P01 = \frac{n_{0\to1} + \alpha}{n_{0} + 2\,\alpha},\quad
+     P11 = \frac{n_{1\to1} + \alpha}{n_{1} + 2\,\alpha}.
+   $$
+4. **Rolling log‑normal fit** (when `use_bootstrap = FALSE`): Calculate centered rolling‑window mean and SD of log(precip + 1e–5), then sample new values from Normal(μ, σ) and back‑transform.
+5. **Synthetic timeline**: Build a sequence of Dates spanning `nyears` years (including leap days) starting at “2000‑01‑01”.
+6. **Simulate wet/dry**: Initialize the first day’s wet probability from historical frequency, then use the monthly Markov chain to generate a Bernoulli sequence.
+7. **Sample intensities**:
+
+   * **Bootstrap**: Draw a random historic wet‑day precipitation for each wet day.
+   * **Parametric**: Sample log‑intensity, optionally truncate at the 99th percentile, then exponentiate.
+8. **AR(1) on log‑intensity**: If `ar_phi` is set, apply
+
+   $$
+     \log p_i = \phi\,\log p_{i-1} + \sqrt{1 - \phi^2}\,\epsilon_i
+   $$
+
+   across consecutive wet days.
+9. **Clamp values**: Ensure simulated `PRECIP` and `TEMP` lie within user‑specified ranges.
+10. **Temperature draw**: For each day, sample from Normal(μ\_m, σ\_m) estimated from historical temperatures in month *m*.
+
+**Return Value**
+An `xts` object with columns:
+
+* `PRECIP` (simulated daily precipitation in mm)
+* `TEMP_DAILY_AVE` (simulated daily average temperature in °C)
+
+---
+
+## 3. Example Workflow
+
+Below is a step‑by‑step walkthrough of how to run the generator, compute summary statistics, and produce comparison plots.
+
+1. **Load data & function**
+   First, source the generator and load your historical forcing data into `xts` time series.
+
+   ```r
+   source("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/generate_weather.R")
+
+   data <- read.csv("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/ForcingFunctions.csv")
+   library(xts); library(lubridate); library(dplyr); library(ggplot2)
+
+   precip_xts <- xts(data$precipitation..mm., order.by = as.Date(data$date))
+   temp_xts   <- xts(data$temp..C.,           order.by = as.Date(data$date))
+   colnames(precip_xts) <- "precip"
+   colnames(temp_xts)   <- "temp"
+   ```
+
+2. **Generate synthetic series**
+   Call `generate_weather()` with default settings (100 years, bootstrap).
+
+   ```r
+   synthetic_xts <- generate_weather(precip_xts, temp_xts)
+   ```
+
+3. **Convert to data frames & add Year/DOY**
+   Prepare observed and synthetic data frames for analysis.
+
+   ```r
+   obs_df <- data.frame(
+     date   = index(precip_xts),
+     precip = coredata(precip_xts),
+     temp   = coredata(temp_xts)
+   ) %>%
+     mutate(year = year(date), doy = yday(date))
+
+   syn_df <- data.frame(
+     date  = index(synthetic_xts),
+     PRECIP = coredata(synthetic_xts[, "PRECIP"]),
+     TEMP   = coredata(synthetic_xts[, "TEMP_DAILY_AVE"])
+   ) %>%
+     rename(precip = PRECIP, temp = TEMP) %>%
+     mutate(year = year(date), doy = yday(date))
+   ```
+
+4. **Define summary routines**
+   Functions for daily climatology, monthly stats, and heatwave counts.
+
+   ```r
+   daily_means <- function(df) {
+     df %>%
+       group_by(doy) %>%
+       summarise(
+         mean_temp   = mean(temp,   na.rm = TRUE),
+         mean_precip = mean(precip, na.rm = TRUE)
+       )
+   }
+
+   monthly_stats <- function(df) {
+     df %>%
+       mutate(month = month(date, label = TRUE)) %>%
+       group_by(month) %>%
+       summarise(
+         mean_temp   = mean(temp,   na.rm = TRUE),
+         sd_temp     = sd(temp,     na.rm = TRUE),
+         mean_precip = mean(precip, na.rm = TRUE),
+         sd_precip   = sd(precip,   na.rm = TRUE)
+       )
+   }
+
+   count_heatwaves <- function(df, threshold = 30, duration = 3) {
+     df %>%
+       mutate(hot = temp > threshold) %>%
+       group_by(year) %>%
+       summarise(
+         heatwaves = sum(rle(hot)$lengths[rle(hot)$values] >= duration)
+       )
+   }
+   ```
+
+5. **Compute summaries**
+
+   ```r
+   obs_daily   <- daily_means(obs_df)
+   syn_daily   <- daily_means(syn_df)
+   obs_monthly <- monthly_stats(obs_df)
+   syn_monthly <- monthly_stats(syn_df)
+   obs_hw      <- count_heatwaves(obs_df, threshold = 19, duration = 3)
+   syn_hw      <- count_heatwaves(syn_df, threshold = 19, duration = 3)
+   ```
+
+6. **Generate plots**
+
+   * **Daily climatology**: Compare mean temperature and precipitation by day of year.
+   * **Monthly climatology**: Overlay observed vs. synthetic monthly means.
+   * **Distributions**: Density plots for temperature and log‑precipitation.
+   * **Heatwaves**: Boxplot of annual heatwave counts.
+   * **Overall stats**: Summary table of means and SDs.
+
+   *(See the code in the repository for full plotting commands.)*
+
+---
+
+## 4. Interpretation
+
+Use these comparisons to evaluate how closely the synthetic series matches observed climatology, variability, and extreme‐event statistics. Adjust function arguments (e.g. `use_bootstrap = FALSE`, `ar_phi = 0.8`, `nyears = 50`) to test sensitivity.
+
+---
+
+### License
+
+MIT © Rezgar Arabzadeh
+
+```
 ```
