@@ -176,9 +176,108 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    syn_hw      <- count_heatwaves(syn_df, threshold = 19, duration = 3)
    ```
 
+
+
+
+## 4. Visualization
+
+1. **Daily climatology** (mean temp & precip by day of year)
+2. **Monthly statistics** (mean and SD of temp and precip)
+3. **Heatwave frequency** (boxplot of yearly counts)
+
 ---
 
-## 4. Interpretation
+### 📈 1. Daily Climatology: Mean Temp & Precip by DOY
+
+```r
+library(ggplot2)
+library(dplyr)
+
+# Merge for plotting
+daily_combined <- bind_rows(
+  obs_daily %>% mutate(Source = "Observed"),
+  syn_daily %>% mutate(Source = "Synthetic")
+)
+
+# Temperature
+ggplot(daily_combined, aes(x = doy, y = mean_temp, color = Source)) +
+  geom_line() +
+  labs(title = "Daily Mean Temperature", x = "Day of Year", y = "Temperature (°C)") +
+  theme_minimal()
+
+# Precipitation
+ggplot(daily_combined, aes(x = doy, y = mean_precip, color = Source)) +
+  geom_line() +
+  labs(title = "Daily Mean Precipitation", x = "Day of Year", y = "Precipitation (mm)") +
+  theme_minimal()
+```
+
+---
+
+### 📊 2. Monthly Mean & SD of Temp and Precip
+
+```r
+# Merge monthly stats
+monthly_combined <- bind_rows(
+  obs_monthly %>% mutate(Source = "Observed"),
+  syn_monthly %>% mutate(Source = "Synthetic")
+)
+
+# Mean temperature
+ggplot(monthly_combined, aes(x = month, y = mean_temp, fill = Source)) +
+  geom_col(position = "dodge") +
+  labs(title = "Monthly Mean Temperature", x = "Month", y = "°C") +
+  theme_minimal()
+
+# Mean precipitation
+ggplot(monthly_combined, aes(x = month, y = mean_precip, fill = Source)) +
+  geom_col(position = "dodge") +
+  labs(title = "Monthly Mean Precipitation", x = "Month", y = "mm") +
+  theme_minimal()
+
+# SD temperature
+ggplot(monthly_combined, aes(x = month, y = sd_temp, fill = Source)) +
+  geom_col(position = "dodge") +
+  labs(title = "Monthly Temperature SD", x = "Month", y = "°C") +
+  theme_minimal()
+
+# SD precipitation
+ggplot(monthly_combined, aes(x = month, y = sd_precip, fill = Source)) +
+  geom_col(position = "dodge") +
+  labs(title = "Monthly Precipitation SD", x = "Month", y = "mm") +
+  theme_minimal()
+```
+
+---
+
+### 🔥 3. Heatwave Frequency (Boxplot of Annual Counts)
+
+```r
+hw_combined <- bind_rows(
+  obs_hw %>% mutate(Source = "Observed"),
+  syn_hw %>% mutate(Source = "Synthetic")
+)
+
+ggplot(hw_combined, aes(x = Source, y = heatwaves, fill = Source)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(title = "Annual Heatwave Counts (≥19°C, ≥3 Days)", y = "Count", x = "") +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+   
+
+---
+
+## 5. Interpretation
 
 Use these comparisons to evaluate how closely the synthetic series matches observed climatology, variability, and extreme‐event statistics. Adjust function arguments (e.g. `use_bootstrap = FALSE`, `ar_phi = 0.8`, `nyears = 50`) to test sensitivity.
 
