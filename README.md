@@ -67,9 +67,10 @@ Simulate a multi‑year daily time series of precipitation and temperature by fi
    * **Parametric**: Sample log‑intensity, optionally truncate at the 99th percentile, then exponentiate.
 8. **AR(1) on log‑intensity**: If `ar_phi` is set, apply
 
-$$
+\[
 \log p_i = \phi\,\log p_{i-1} + \sqrt{1 - \phi^2}\,\epsilon_i
-$$
+\]
+
    across consecutive wet days.
 9. **Clamp values**: Ensure simulated `PRECIP` and `TEMP` lie within user‑specified ranges.
 10. **Temperature draw**: For each day, sample from Normal(μ\_m, σ\_m) estimated from historical temperatures in month *m*.
