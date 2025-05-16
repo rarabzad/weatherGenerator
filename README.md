@@ -167,12 +167,17 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
 5. **Compute summaries**
 
    ```r
-   obs_daily   <- daily_means(obs_df)
-   syn_daily   <- daily_means(syn_df)
-   obs_monthly <- monthly_stats(obs_df)
-   syn_monthly <- monthly_stats(syn_df)
-   obs_hw      <- count_heatwaves(obs_df, threshold = 19, duration = 3)
-   syn_hw      <- count_heatwaves(syn_df, threshold = 19, duration = 3)
+summary_df <- tibble(
+  Metric = c("Mean Temp (°C)", "SD Temp", "Mean Precip (mm)", "SD Precip"),
+  Observed = c(mean(obs_df$temp, na.rm = TRUE),
+               sd(obs_df$temp, na.rm = TRUE),
+               mean(obs_df$precip, na.rm = TRUE),
+               sd(obs_df$precip, na.rm = TRUE)),
+  Synthetic = c(mean(syn_df$temp, na.rm = TRUE),
+                sd(syn_df$temp, na.rm = TRUE),
+                mean(syn_df$precip, na.rm = TRUE),
+                sd(syn_df$precip, na.rm = TRUE)))
+knitr::kable(summary_df, digits = 2, caption = "Comparison of Overall Statistics")
    ```
 
 6. **Generate plots**
@@ -182,9 +187,6 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    * **Distributions**: Density plots for temperature and log‑precipitation.
    * **Heatwaves**: Boxplot of annual heatwave counts.
    * **Overall stats**: Summary table of means and SDs.
-
-   *(See the code in the repository for full plotting commands.)*
-
 ---
 
 ## 4. Interpretation
