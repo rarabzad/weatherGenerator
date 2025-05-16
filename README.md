@@ -117,8 +117,8 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    ```r
    obs_df <- data.frame(
      date   = index(precip_xts),
-     precip = coredata(precip_xts),
-     temp   = coredata(temp_xts)
+     PRECIP = coredata(precip_xts),
+     TEMP   = coredata(temp_xts)
    ) %>%
      mutate(year = year(date), doy = yday(date))
 
