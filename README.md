@@ -271,6 +271,59 @@ ggplot(hw_combined, aes(x = Source, y = heatwaves, fill = Source)) +
 
 
 
+---
+
+### 🌡️ 4. Temperature Density Plot
+
+```r
+# Combine observed and synthetic temperatures
+temp_density_df <- bind_rows(
+  obs_df %>% select(temp) %>% rename(TEMP = temp) %>% mutate(Source = "Observed"),
+  syn_df %>% select(temp) %>% rename(TEMP = temp) %>% mutate(Source = "Synthetic")
+)
+
+ggplot(temp_density_df, aes(x = TEMP, fill = Source)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Temperature Density", x = "Temperature (°C)", y = "Density") +
+  theme_minimal()
+```
+
+---
+
+### 🌧️ 5. Precipitation Density Plot
+
+#### A. **Raw Precipitation**
+
+```r
+precip_density_df <- bind_rows(
+  obs_df %>% select(precip) %>% rename(PRECIP = precip) %>% mutate(Source = "Observed"),
+  syn_df %>% select(precip) %>% rename(PRECIP = precip) %>% mutate(Source = "Synthetic")
+)
+
+ggplot(precip_density_df, aes(x = PRECIP, fill = Source)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Precipitation Density", x = "Precipitation (mm)", y = "Density") +
+  xlim(0, quantile(precip_density_df$PRECIP, 0.99, na.rm = TRUE)) +
+  theme_minimal()
+```
+
+#### B. **Log-Transformed Precipitation**
+
+```r
+ggplot(precip_density_df, aes(x = log(PRECIP + 1e-5), fill = Source)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Log-Transformed Precipitation Density", x = "log(Precipitation + 1e-5)", y = "Density") +
+  theme_minimal()
+```
+
+---
+
+
+
+
+
+
+
 
 
    
