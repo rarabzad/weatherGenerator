@@ -15,9 +15,6 @@ You can install directly from GitHub using **devtools**, or simply source the fu
 
 ```r
 # Install from GitHub via devtools
-devtools::install_github("rarabzad/weatherGenerator")
-
-# Or source the function directly
 source("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/generate_weather.R")
 ````
 
@@ -90,10 +87,16 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
    First, source the generator and load your historical forcing data into `xts` time series.
 
    ```r
+   library(xts)
+   library(zoo)
+   library(lubridate)
+   library(dplyr)
+   library(ggplot2)
+   library(knitr)
+   
    source("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/generate_weather.R")
 
    data <- read.csv("https://github.com/rarabzad/weatherGenerator/raw/refs/heads/main/ForcingFunctions.csv")
-   library(xts); library(lubridate); library(dplyr); library(ggplot2)
 
    precip_xts <- xts(data$precipitation..mm., order.by = as.Date(data$date))
    temp_xts   <- xts(data$temp..C.,           order.by = as.Date(data$date))
