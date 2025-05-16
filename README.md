@@ -196,7 +196,4 @@ Use these comparisons to evaluate how closely the synthetic series matches obser
 
 ### License
 
-MIT © Rezgar Arabzadeh
-
-```
-```
+```MIT © Rezgar Arabzadeh```
