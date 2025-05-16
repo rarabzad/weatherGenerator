@@ -117,6 +117,6 @@ generate_weather <- function(precip_xts, temp_xts, nyears = 100,
   temp <- pmax(pmin(temp, temp_range[2]), temp_range[1])
   
   # 10. Return xts
-  out <- xts::xts(cbind(PRECIP = prcp, TEMP_DAILY_AVE = temp), order.by = dates)
+  out <- xts::xts(cbind(PRECIP = prcp, TEMP = temp), order.by = dates)
   return(out)
 }
