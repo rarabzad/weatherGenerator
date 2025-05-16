@@ -138,8 +138,8 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
      df %>%
        group_by(doy) %>%
        summarise(
-         mean_temp   = mean(temp,   na.rm = TRUE),
-         mean_precip = mean(precip, na.rm = TRUE)
+         mean_temp   = mean(TEMP,   na.rm = TRUE),
+         mean_precip = mean(PRECIP, na.rm = TRUE)
        )
    }
 
@@ -148,16 +148,16 @@ Below is a step‑by‑step walkthrough of how to run the generator, compute sum
        mutate(month = month(date, label = TRUE)) %>%
        group_by(month) %>%
        summarise(
-         mean_temp   = mean(temp,   na.rm = TRUE),
-         sd_temp     = sd(temp,     na.rm = TRUE),
-         mean_precip = mean(precip, na.rm = TRUE),
-         sd_precip   = sd(precip,   na.rm = TRUE)
+         mean_temp   = mean(TEMP,   na.rm = TRUE),
+         sd_temp     = sd(TEMP,     na.rm = TRUE),
+         mean_precip = mean(PRECIP, na.rm = TRUE),
+         sd_precip   = sd(PRECIP,   na.rm = TRUE)
        )
    }
 
    count_heatwaves <- function(df, threshold = 30, duration = 3) {
      df %>%
-       mutate(hot = temp > threshold) %>%
+       mutate(hot = TEMP > threshold) %>%
        group_by(year) %>%
        summarise(
          heatwaves = sum(rle(hot)$lengths[rle(hot)$values] >= duration)
