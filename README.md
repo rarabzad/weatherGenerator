@@ -60,16 +60,11 @@ Simulate a multi‑year daily time series of precipitation and temperature by fi
 5. **Synthetic timeline**: Build a sequence of Dates spanning `nyears` years (including leap days) starting at “2000‑01‑01”.
 6. **Simulate wet/dry**: Initialize the first day’s wet probability from historical frequency, then use the monthly Markov chain to generate a Bernoulli sequence.
 7. **Sample intensities**:
-
    * **Bootstrap**: Draw a random historic wet‑day precipitation for each wet day.
    * **Parametric**: Sample log‑intensity, optionally truncate at the 99th percentile, then exponentiate.
-8. **AR(1) on log‑intensity**: If `ar_phi` is set, apply
-
-log pᵢ = ϕ · log pᵢ₋₁ + √(1 - ϕ²) · εᵢ
-
-   across consecutive wet days.
+8. **AR(1) on log‑intensity**: If `ar_phi` is set, apply log pᵢ = ϕ · log pᵢ₋₁ + √(1 - ϕ²) · εᵢ across consecutive wet days.
 9. **Clamp values**: Ensure simulated `PRECIP` and `TEMP` lie within user‑specified ranges.
-10. **Temperature draw**: For each day, sample from Normal(μ\_m, σ\_m) estimated from historical temperatures in month *m*.
+11. **Temperature draw**: For each day, sample from Normal(μ\_m, σ\_m) estimated from historical temperatures in month *m*.
 
 **Return Value**
 An `xts` object with columns:
